@@ -139,8 +139,30 @@ def update_member(id: int, name: str, borrowed_books: list[int]):
 
 def delete_member(id: int):
     cursor = conn.cursor()
-    
+
     cursor.execute("DELETE FROM borrowed_books WHERE member_id=?", (id,))
     cursor.execute("DELETE FROM members WHERE id=?", (id,))
     conn.commit()
     return {"status": "Member deleted"}
+
+def borrow_book(member_id: int, book_id: int) -> str:
+    cursor = conn.cursor()
+    
+    """Allow a member to borrow a book if it's available."""
+    cursor.execute("SELECT availability FROM books WHERE id=?", (book_id,))
+    result = cursor.fetchone()
+    if not result:
+        return "Error: Book not found."
+    if not result[0]:
+        return "Error: Book is currently unavailable."
+
+    cursor.execute(
+        "INSERT INTO borrowed_books (member_id, book_id) VALUES (?, ?)",
+        (member_id, book_id)
+    )
+    cursor.execute(
+        "UPDATE books SET availability=0 WHERE id=?",
+        (book_id,)
+    )
+    conn.commit()
+    return f"Member {member_id} successfully borrowed book {book_id}."

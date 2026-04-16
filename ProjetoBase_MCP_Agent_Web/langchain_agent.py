@@ -27,7 +27,7 @@ if not GOOGLE_API_KEY:
     raise ValueError("A variável GOOGLE_API_KEY não está definida no .env")
 
 # ── LLM ───────────────────────────────────────────────────────────────────────
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_API_KEY) #gemini-2.5-flash , ir trocando de modelo se chegar ao limite gratuito https://ai.google.dev/gemini-api/docs/models/
+llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview", google_api_key=GOOGLE_API_KEY) #gemini-2.5-flash , ir trocando de modelo se chegar ao limite gratuito https://ai.google.dev/gemini-api/docs/models/
 
 # ── MEMORY (persists across requests for the same thread_id) ──────────────────
 memory = InMemorySaver()

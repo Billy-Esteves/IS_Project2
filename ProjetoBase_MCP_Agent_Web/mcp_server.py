@@ -6,7 +6,7 @@ Run with: python mcp_server.py
 
 from fastmcp import FastMCP
 from crud_service import (
-    create_book, read_book_list, update_book, delete_book, create_member, read_member_list, update_member, delete_member
+    create_book, read_book_list, update_book, delete_book, create_member, read_member_list, update_member, delete_member, borrow_book
 )
 
 mcp = FastMCP(name="SimpleAssistantServer")
@@ -86,24 +86,7 @@ def delete_all_members_tool(confirm: bool) -> str:
 
 @mcp.tool()
 def borrow_book_tool(member_id: int, book_id: int) -> str:
-    """Allow a member to borrow a book if it's available."""
-    cursor.execute("SELECT availability FROM books WHERE id=?", (book_id,))
-    result = cursor.fetchone()
-    if not result:
-        return "Error: Book not found."
-    if not result[0]:
-        return "Error: Book is currently unavailable."
-
-    cursor.execute(
-        "INSERT INTO borrowed_books (member_id, book_id) VALUES (?, ?)",
-        (member_id, book_id)
-    )
-    cursor.execute(
-        "UPDATE books SET availability=0 WHERE id=?",
-        (book_id,)
-    )
-    conn.commit()
-    return f"Member {member_id} successfully borrowed book {book_id}."
+    return borrow_book(member_id, book_id)
 
 
 @mcp.tool()
