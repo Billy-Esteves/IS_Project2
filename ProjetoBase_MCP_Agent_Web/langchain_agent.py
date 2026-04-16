@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
             await session.initialize()
 
             prompt_data = await session.get_prompt(
-                "health_advisor_prompt", arguments={"user_name": "Visitante"}
+                "library_assistant_prompt", arguments={"user_name": "Visitante"}
             )
             system_instruction = prompt_data.messages[0].content.text
 
@@ -77,6 +77,11 @@ async def lifespan(app: FastAPI):
             resource_text = resource_data.contents[0].text
             print(f"\n📖 RESOURCE LIDO [info://app]:\n{resource_text}")
             system_instruction += f"\n\nServer context:\n{resource_text}"
+
+            resource_data = await session.read_resource("info://library_rules")
+            resource_text = resource_data.contents[0].text
+            print(f"\n📖 RESOURCE LIDO [info://library_rules]:\n{resource_text}")
+            system_instruction += f"\n\nLibrary rules:\n{resource_text}"
 
 
             tools = await load_mcp_tools(session)

@@ -73,29 +73,90 @@ def delete_member_tool(id: int):
     """Delete a member by ID."""
     return str(delete_member(id))
 
+@mcp.tool()
+def delete_all_members_tool(confirm: bool) -> str:
+    """Delete all members and their borrowed books."""
+    if confirm:
+        raise PermissionError(
+            "CRITICAL EXCEPTION: Mass deletion of all members and books is strictly forbidden! "
+            "Operation aborted to prevent data loss."
+        )
+    
+    return "Operation cancelled safely. The data is untouched."
+
+@mcp.tool()
+def borrow_book_tool(member_id: int, book_id: int) -> str:
+    """Allow a member to borrow a book if it's available."""
+    cursor.execute("SELECT availability FROM books WHERE id=?", (book_id,))
+    result = cursor.fetchone()
+    if not result:
+        return "Error: Book not found."
+    if not result[0]:
+        return "Error: Book is currently unavailable."
+
+    cursor.execute(
+        "INSERT INTO borrowed_books (member_id, book_id) VALUES (?, ?)",
+        (member_id, book_id)
+    )
+    cursor.execute(
+        "UPDATE books SET availability=0 WHERE id=?",
+        (book_id,)
+    )
+    conn.commit()
+    return f"Member {member_id} successfully borrowed book {book_id}."
+
+
+@mcp.tool()
+def calculate_late_fee_tool(days_late: int) -> int:
+    """
+    Calculate the late fee in CENTS. 
+    Accepts INT (full days) and returns INT (cents). Cost is 50 cents per day.
+    """
+    return days_late * 50
+
+@mcp.tool()
+def calculate_late_fee_float(days_late: float) -> str:
+    """Calculate the late fee based on the number of days late (accepting float)."""
+    if days_late < 0:
+        return "Error: days_late cannot be negative."
+    fee_per_day = 0.50
+    total_fee = days_late * fee_per_day
+    return f"Total late fee for {days_late:.2f} days late is ${total_fee:.2f}."
+
 
 # ─── RESOURCE ────────────────────────────────────────────────────────────────
 @mcp.resource("info://app")
 def get_app_info() -> str:
     """Returns general information about this MCP server / app."""
     return (
-        "SimpleAssistantServer v1.0\n"
-        "Purpose: Demo MCP server with a tool, resource, and prompt.\n"
-        "Available tool: calculate_bmi\n"
+        "SimpleLibraryAssistant v1.0\n"
+        "Purpose: A MCP server with tools, resources, and prompt.\n"
+        "Available tools: create_book_tool, read_book_list_tool, update_book_tool, delete_book_tool, create_member_tool, read_member_list_tool, update_member_tool, delete_member_tool\n"
         "Built with: FastMCP + Python\n"
+    )
+
+
+@mcp.resource("info://library_rules")
+def get_library_rules() -> str:
+    """Returns the library rules."""
+    return (
+        "Library Rules:\n"
+        "1. Books can be borrowed for a maximum of 2 weeks.\n"
+        "2. Late returns incur a fine of $0.50 per day.\n"
+        "3. Please handle books with care and return them in good condition."
     )
 
 
 # ─── PROMPT ──────────────────────────────────────────────────────────────────
 @mcp.prompt()
-def health_advisor_prompt(user_name: str = "User") -> str:
-    """A system prompt that turns the LLM into a friendly health advisor."""
+def library_assistant_prompt(user_name: str = "User") -> str:
+    """A system prompt that turns the LLM into a friendly library assistant."""
     return (
-        f"You are a friendly and knowledgeable health advisor. "
+        f"You are a friendly and knowledgeable library assistant. "
         f"You are currently helping {user_name}. "
-        "You can calculate BMI using the `calculate_bmi` tool. "
-        "Always remind users that your advice is informational only and not a substitute "
-        "for professional medical guidance. Keep your tone warm and encouraging."
+        "You can manage books and members using the available tools. "
+        "You can also calculate late fees if needed."
+        "Keep your tone warm, encouraging, and helpful."
     )
 
 
